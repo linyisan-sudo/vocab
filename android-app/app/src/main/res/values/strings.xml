@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">英文單字卡</string>
+    <string name="loading">正在載入單字卡...</string>
+    <string name="choose_file">選取詞彙表檔案</string>
+</resources>

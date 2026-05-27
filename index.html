@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anki 單字卡</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --bg-2: #eadfcf;
+      --surface: rgba(255,255,255,.72);
+      --surface-strong: rgba(255,255,255,.92);
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --accent: #e76f51;
+      --accent-deep: #cc5a3f;
+      --accent-soft: #fff1ec;
+      --teal: #2a9d8f;
+      --gold: #e9c46a;
+      --danger: #d62828;
+      --line: rgba(110, 89, 62, .18);
+      --shadow: 0 22px 60px rgba(84, 62, 41, .18);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,.65), transparent 28%),
+        linear-gradient(180deg, #f7f0e4 0%, #f0e6d8 38%, #e8dcc9 100%);
+    }
+    button, input, textarea, select { font: inherit; }
+    button, .file-label {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      transition: transform .18s ease, opacity .18s ease, background .18s ease;
+    }
+    button:hover, .file-label:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    input[type="file"] { display: none; }
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      padding: 13px 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    .shell {
+      min-height: 100vh;
+      padding: 20px 14px 28px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .phone {
+      width: min(100%, 430px);
+      min-height: calc(100vh - 40px);
+      background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.42));
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 36px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+      position: relative;
+    }
+    .phone::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      background: rgba(70, 56, 40, .9);
+      border-radius: 999px;
+      z-index: 2;
+    }
+    .app {
+      padding: 34px 14px 110px;
+      display: grid;
+      gap: 14px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 10px 4px;
+    }
+    .brand {
+      display: grid;
+      gap: 2px;
+    }
+    .brand small {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+    .top-chip {
+      min-width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff9f2, #f7e8d7);
+      display: grid;
+      place-items: center;
+      color: var(--accent-deep);
+      font-size: 24px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+    }
+    .hero-card, .panel, .completion-screen {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.5);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .hero-card {
+      padding: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(233,196,106,.35), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,248,241,.8));
+    }
+    .hero-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      background: rgba(255,255,255,.58);
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 20px;
+      padding: 14px;
+      min-height: 84px;
+    }
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .panel {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .panel h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .section-note, .help, .status, .progress-text, .completion-summary {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 13px;
+    }
+    .row { display: grid; gap: 8px; }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btns, .controls, .review-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button, .file-label {
+      min-height: 46px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    .file-label { display: inline-flex; align-items: center; justify-content: center; }
+    button.primary { background: var(--accent); color: #fff7f4; }
+    button.good { background: var(--teal); color: white; }
+    button.danger { background: #f3c7bf; color: #6f1d13; }
+    .status {
+      min-height: 22px;
+      padding: 4px 2px 0;
+    }
+    .toolbar {
+      display: grid;
+      gap: 10px;
+    }
+    .search { width: 100%; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .progress-panel {
+      display: grid;
+      gap: 10px;
+      padding: 4px 2px 0;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(231, 111, 81, .12);
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      transition: width .25s ease;
+    }
+    .review-stats span {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      font-size: 12px;
+    }
+    .flashcard-wrap { perspective: 1200px; }
+    .flashcard {
+      position: relative;
+      min-height: 420px;
+      width: 100%;
+      transform-style: preserve-3d;
+      transition: transform .6s ease;
+      cursor: pointer;
+    }
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 22px;
+      border-radius: 30px;
+      backface-visibility: hidden;
+      border: 1px solid rgba(255,255,255,.6);
+      box-shadow: 0 18px 42px rgba(130, 93, 57, .14);
+      background:
+        radial-gradient(circle at top right, rgba(233,196,106,.24), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,245,237,.86));
+    }
+    .back {
+      transform: rotateY(180deg);
+      background:
+        radial-gradient(circle at top right, rgba(42,157,143,.18), transparent 34%),
+        linear-gradient(180deg, rgba(248,255,253,.96), rgba(236,247,244,.88));
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+    .audio-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 24px;
+      margin-bottom: 16px;
+    }
+    .tts-btn {
+      min-height: 34px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .front-text {
+      width: 100%;
+      font-size: clamp(28px, 7vw, 40px);
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .back-text {
+      width: 100%;
+      max-height: 280px;
+      overflow-y: auto;
+      font-size: 17px;
+      line-height: 1.8;
+    }
+    .card-html { white-space: normal; line-height: 1.8; width: 100%; }
+    .card-html .line { margin-bottom: 8px; }
+    .card-html .line:last-child { margin-bottom: 0; }
+    .review-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .review-btn { color: #fff; }
+    .again { background: #cf5c47; }
+    .hard { background: #d18d28; }
+    .good-score { background: #339989; }
+    .easy { background: #457b9d; }
+    .flagged { background: #6c63ff; }
+    .completion-screen {
+      padding: 24px 18px;
+      text-align: center;
+      display: grid;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,246,233,.88));
+    }
+    .completion-title {
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .list {
+      display: grid;
+      gap: 10px;
+      max-height: 260px;
+      overflow: auto;
+    }
+    .item {
+      padding: 13px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(255,255,255,.7);
+    }
+    .item.active {
+      outline: 2px solid rgba(231, 111, 81, .32);
+      background: rgba(255,241,236,.92);
+    }
+    .item-front { font-weight: 800; }
+    .item-back {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: pre-wrap;
+    }
+    .bottom-nav {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px;
+      box-shadow: 0 14px 30px rgba(93, 70, 46, .14);
+      backdrop-filter: blur(16px);
+    }
+    .nav-item {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+    .nav-item strong {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(244,239,229,.95);
+      color: var(--accent-deep);
+      font-size: 18px;
+    }
+    .nav-item.active strong {
+      background: linear-gradient(180deg, #ffefe8, #ffd9cd);
+    }
+    .desktop-note {
+      text-align: center;
+      color: rgba(31,41,55,.68);
+      font-size: 12px;
+      padding: 2px 8px 0;
+    }
+    code { word-break: break-all; }
+    kbd {
+      background: rgba(255,255,255,.75);
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 8px;
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+    @media (max-width: 360px) {
+      .row-2, .controls, .review-actions { grid-template-columns: 1fr; }
+      .dashboard { grid-template-columns: 1fr; }
+      .app { padding-left: 10px; padding-right: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="phone">
+      <div class="app">
+        <header class="topbar">
+          <div class="brand">
+            <small>Vocabulary Study</small>
+            <h1>英文單字卡</h1>
+          </div>
+          <div class="top-chip">Aa</div>
+        </header>
+
+        <section class="hero-card">
+          <div class="section-head">
+            <strong>學習主畫面</strong>
+            <span class="tag">Mobile First</span>
+          </div>
+        </section>
+
+        <section class="dashboard">
+          <div class="stat"><div class="label">牌組名稱</div><div class="value" id="deckNameStat">未命名</div></div>
+          <div class="stat"><div class="label">卡片總數</div><div class="value" id="countStat">0</div></div>
+          <div class="stat"><div class="label">剩餘卡片</div><div class="value" id="resultStat">0</div></div>
+          <div class="stat"><div class="label">當前進度</div><div class="value" id="indexStat">0 / 0</div></div>
+          <div class="stat"><div class="label">不熟字卡</div><div class="value" id="flaggedStat">0</div></div>
+        </section>
+
+        <aside class="panel">
+          <div class="section-head">
+            <h2>匯入詞彙表</h2>
+            <span class="section-note">支援 CSV / TSV / JSON</span>
+          </div>
+          <div class="help">
+            可直接匯入高中英文參考詞彙表，也能貼上整理好的卡片資料。<br>
+            快捷鍵：<kbd>←</kbd>、<kbd>→</kbd>、<kbd>空白</kbd>、<kbd>1</kbd>~<kbd>5</kbd>
+          </div>
+
+          <div class="row">
+            <label for="deckName">牌組名稱</label>
+            <input id="deckName" value="高中英文單字卡" />
+          </div>
+
+          <div class="row row-2">
+            <div>
+              <label for="formatSelect">匯入格式</label>
+              <select id="formatSelect">
+                <option value="tsv">Tab 分隔（推薦）</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+            <div>
+              <label for="fileInput">匯入檔案</label>
+              <label class="file-label" for="fileInput">選取詞彙表</label>
+              <input id="fileInput" type="file" accept=".txt,.tsv,.csv,.json" />
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="inputArea">卡片原始資料</label>
+            <textarea id="inputArea" placeholder="ability (n.)	{{tts en_US:ability}}&lt;br&gt;【解釋】能力...	Lv1"></textarea>
+          </div>
+
+          <div class="btns">
+            <button class="primary" id="importBtn">匯入卡片</button>
+            <button id="saveBtn">儲存進度</button>
+            <button class="danger" id="clearBtn">清空資料</button>
+          </div>
+
+          <div class="status" id="status">尚未匯入資料。</div>
+        </aside>
+
+        <main class="panel viewer">
+          <div class="section-head">
+            <h2>今日複習</h2>
+            <span class="section-note">點卡片可直接翻面</span>
+          </div>
+
+          <div class="toolbar">
+            <input class="search" id="searchInput" placeholder="搜尋單字、中文翻譯、例句或搭配詞" />
+            <div class="controls">
+              <button id="prevBtn">上一張</button>
+              <button class="good" id="flipBtn">翻面</button>
+              <button id="nextBtn">下一張</button>
+              <button id="shuffleBtn">洗牌</button>
+              <button id="restartBtn">重來</button>
+              <button id="studyFlaggedBtn">不熟字</button>
+            </div>
+          </div>
+
+          <div class="progress-panel">
+            <div class="progress-text" id="progressText">剩下卡片數量：0 / 0</div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="review-stats">
+              <span>Again <strong id="againCount">0</strong></span>
+              <span>Hard <strong id="hardCount">0</strong></span>
+              <span>Good <strong id="goodCount">0</strong></span>
+              <span>Easy <strong id="easyCount">0</strong></span>
+            </div>
+          </div>
+
+          <div class="flashcard-wrap">
+            <div class="flashcard" id="flashcard">
+              <section class="face front">
+                <div class="tag">正面 / Front</div>
+                <div class="audio-bar" id="frontAudioBar"></div>
+                <div class="front-text" id="frontText">尚未載入卡片</div>
+              </section>
+              <section class="face back">
+                <div class="tag">背面 / Back</div>
+                <div class="audio-bar" id="backAudioBar"></div>
+                <div class="back-text" id="backText">匯入資料後，這裡會顯示解釋、搭配詞、例句和翻譯。</div>
+              </section>
+            </div>
+          </div>
+
+          <div class="review-actions" id="reviewActions">
+            <button class="review-btn again" id="againBtn">Again</button>
+            <button class="review-btn hard" id="hardBtn">Hard</button>
+            <button class="review-btn good-score" id="goodBtn">Good</button>
+            <button class="review-btn easy" id="easyBtn">Easy</button>
+            <button class="review-btn flagged" id="flagBtn">收藏不熟</button>
+            <button class="review-btn" id="unflagBtn">取消收藏</button>
+          </div>
+
+          <div class="completion-screen" id="completionScreen" hidden>
+            <div class="completion-title">完成練習！</div>
+            <div class="completion-summary" id="completionSummary">你已完成本次卡片複習。</div>
+            <button class="primary" id="restartSessionBtn">重新開始</button>
+          </div>
+
+          <div class="section-head">
+            <h2>待複習清單</h2>
+            <span class="section-note">最多顯示 30 張</span>
+          </div>
+          <div class="list" id="cardList"></div>
+        </main>
+      </div>
+
+      <nav class="bottom-nav" aria-label="App navigation preview">
+        <div class="nav-item active"><strong>🏠</strong><span>首頁</span></div>
+        <div class="nav-item"><strong>📚</strong><span>牌組</span></div>
+        <div class="nav-item"><strong>⭐</strong><span>重點</span></div>
+        <div class="nav-item"><strong>⚙️</strong><span>設定</span></div>
+      </nav>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'anki_vocab_import_webapp_final_import_fixed_cards';
+    const FLAGGED_STORAGE_KEY = 'anki_vocab_import_webapp_final_import_fixed_flagged';
+
+    const state = {
+      deckName: '未命名',
+      cards: [],
+      filtered: [],
+      reviewQueue: [],
+      flagged: [],
+      initialReviewCount: 0,
+      stats: { again: 0, hard: 0, good: 0, easy: 0 },
+      flipped: false,
+      voices: [],
+    };
+
+    const els = {
+      inputArea: document.getElementById('inputArea'),
+      formatSelect: document.getElementById('formatSelect'),
+      deckName: document.getElementById('deckName'),
+      importBtn: document.getElementById('importBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      fileInput: document.getElementById('fileInput'),
+      status: document.getElementById('status'),
+      deckNameStat: document.getElementById('deckNameStat'),
+      countStat: document.getElementById('countStat'),
+      resultStat: document.getElementById('resultStat'),
+      indexStat: document.getElementById('indexStat'),
+      flaggedStat: document.getElementById('flaggedStat'),
+      progressText: document.getElementById('progressText'),
+      progressFill: document.getElementById('progressFill'),
+      againCount: document.getElementById('againCount'),
+      hardCount: document.getElementById('hardCount'),
+      goodCount: document.getElementById('goodCount'),
+      easyCount: document.getElementById('easyCount'),
+      searchInput: document.getElementById('searchInput'),
+      flashcard: document.getElementById('flashcard'),
+      frontText: document.getElementById('frontText'),
+      backText: document.getElementById('backText'),
+      frontAudioBar: document.getElementById('frontAudioBar'),
+      backAudioBar: document.getElementById('backAudioBar'),
+      prevBtn: document.getElementById('prevBtn'),
+      flipBtn: document.getElementById('flipBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      shuffleBtn: document.getElementById('shuffleBtn'),
+      restartBtn: document.getElementById('restartBtn'),
+      studyFlaggedBtn: document.getElementById('studyFlaggedBtn'),
+      againBtn: document.getElementById('againBtn'),
+      hardBtn: document.getElementById('hardBtn'),
+      goodBtn: document.getElementById('goodBtn'),
+      easyBtn: document.getElementById('easyBtn'),
+      flagBtn: document.getElementById('flagBtn'),
+      unflagBtn: document.getElementById('unflagBtn'),
+      reviewActions: document.getElementById('reviewActions'),
+      completionScreen: document.getElementById('completionScreen'),
+      completionSummary: document.getElementById('completionSummary'),
+      restartSessionBtn: document.getElementById('restartSessionBtn'),
+      cardList: document.getElementById('cardList'),
+    };
+
+    function setStatus(message, good = true) {
+      els.status.textContent = message;
+      els.status.style.color = good ? 'var(--muted)' : 'var(--danger)';
+    }
+
+    function normalizeBackText(text) {
+      return String(text || '').replace(/<br\s*\/?\>/gi, '\n').replace(/\r\n/g, '\n').trim();
+    }
+
+    function htmlToDisplay(text) {
+      return String(text || '').replace(/<br\s*\/?\>/gi, '\n').replace(/&nbsp;/g, ' ').trim();
+    }
+
+    function parseTSV(text) {
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      const cards = [];
+      for (const line of lines) {
+        const parts = line.split('\t');
+        if (parts.length < 2) continue;
+        const front = (parts[0] || '').trim();
+        const back = (parts[1] || '').trim();
+        const level = (parts[2] || '').trim() || '未分類';
+        if (front && back) cards.push({ front, back: normalizeBackText(back), level });
+      }
+      return cards;
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let current = '';
+      let row = [];
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+        if (char === '"') {
+          if (inQuotes && next === '"') { current += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (char === ',' && !inQuotes) {
+          row.push(current); current = '';
+        } else if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(current);
+          if (row.some(cell => cell.trim() !== '')) rows.push(row);
+          row = []; current = '';
+        } else current += char;
+      }
+      if (current.length || row.length) {
+        row.push(current);
+        if (row.some(cell => cell.trim() !== '')) rows.push(row);
+      }
+
+      let startIndex = 0;
+      if (rows[0] && rows[0].length >= 2) {
+        const first = rows[0][0].trim().toLowerCase();
+        const second = rows[0][1].trim().toLowerCase();
+        if ((first === 'front' || first === '學習卡正面' || first === '正面') && (second === 'back' || second === '學習卡背面' || second === '背面')) {
+          startIndex = 1;
+        }
+      }
+
+      return rows.slice(startIndex)
+        .filter(r => r.length >= 2)
+        .map(r => ({
+          front: (r[0] || '').trim(),
+          back: normalizeBackText(r[1] || ''),
+          level: (r[2] || '').trim() || '未分類'
+        }))
+        .filter(card => card.front && card.back);
+    }
+
+    function parseJSON(text) {
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error('JSON 必須是陣列格式');
+      return data.map(item => ({
+        front: String(item.front || item.question || item['學習卡正面'] || '').trim(),
+        back: normalizeBackText(item.back || item.answer || item['學習卡背面'] || ''),
+        level: String(item.level || item['等級'] || '未分類').trim() || '未分類',
+      })).filter(card => card.front && card.back);
+    }
+
+    function parseInput(text, format) {
+      if (!text.trim()) return [];
+      if (format === 'tsv') return parseTSV(text);
+      if (format === 'csv') return parseCSV(text);
+      if (format === 'json') return parseJSON(text);
+      return [];
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function extractTTS(text) {
+      const raw = String(text || '');
+      const tags = [];
+      const cleaned = raw.replace(/\{\{tts\s+([a-zA-Z_\-]+)\s*:\s*([\s\S]*?)\}\}/g, function(_, voice, content) {
+        const spoken = String(content || '').trim();
+        if (spoken) tags.push({ voice: voice || 'en_US', text: spoken });
+        return '';
+      });
+      return { cleaned: htmlToDisplay(cleaned), tags };
+    }
+
+    function formatCardHtml(text) {
+      const lines = htmlToDisplay(text).split('\n');
+      return '<div class="card-html">' + lines.map(function(line) {
+        const content = line.trim() ? escapeHtml(line) : '&nbsp;';
+        return '<div class="line">' + content + '</div>';
+      }).join('') + '</div>';
+    }
+
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) return [];
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (voices.length) state.voices = voices;
+      return state.voices;
+    }
+
+    function resolveLang(voiceTag) {
+      const tag = String(voiceTag || '').toLowerCase();
+      if (tag.startsWith('en')) return 'en-US';
+      if (tag.startsWith('zh')) return 'zh-TW';
+      return 'en-US';
+    }
+
+    function getVoiceForLang(lang) {
+      const voices = state.voices.length ? state.voices : loadVoices();
+      const lower = String(lang).toLowerCase();
+      return voices.find(v => String(v.lang || '').toLowerCase() === lower)
+        || voices.find(v => String(v.lang || '').toLowerCase().startsWith(lower.split('-')[0]))
+        || null;
+    }
+
+    function unlockSpeech() {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        const warmup = new SpeechSynthesisUtterance(' ');
+        warmup.volume = 0;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(warmup);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function speakText(text, voiceTag = 'en_US') {
+      if (!('speechSynthesis' in window)) {
+        setStatus('這個瀏覽器不支援語音播放。', false);
+        return;
+      }
+      loadVoices();
+      const content = String(text || '').trim();
+      if (!content) return;
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.rate = 0.96;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      utterance.lang = resolveLang(voiceTag);
+      const matched = getVoiceForLang(utterance.lang);
+      if (matched) utterance.voice = matched;
+      window.speechSynthesis.cancel();
+      setTimeout(() => window.speechSynthesis.speak(utterance), 60);
+    }
+
+    function renderAudioBar(target, tags) {
+      target.innerHTML = '';
+      if (!tags.length) return;
+      tags.forEach((tag, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'tts-btn';
+        btn.type = 'button';
+        btn.textContent = '🔊 發音 ' + (idx + 1);
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          unlockSpeech();
+          speakText(tag.text, tag.voice);
+        });
+        target.appendChild(btn);
+      });
+    }
+
+    function sameCard(a, b) {
+      return a && b && a.front === b.front && a.back === b.back;
+    }
+
+    function saveCardsToLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ deckName: state.deckName, cards: state.cards }));
+    }
+
+    function saveFlaggedToLocal() {
+      localStorage.setItem(FLAGGED_STORAGE_KEY, JSON.stringify(state.flagged));
+    }
+
+    function loadFlaggedFromLocal() {
+      const raw = localStorage.getItem(FLAGGED_STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) state.flagged = data.filter(card => card && card.front && card.back);
+      } catch (err) { console.error(err); }
+    }
+
+    function loadCardsFromLocal() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.cards)) {
+          els.deckName.value = data.deckName || '未命名';
+          importCards(data.cards, data.deckName || '未命名');
+          setStatus('已從瀏覽器載入 ' + data.cards.length + ' 張卡片。');
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function rebuildReviewQueueFromFiltered() {
+      state.reviewQueue = state.filtered.map(card => ({ front: card.front, back: card.back, level: card.level || '未分類' }));
+      state.initialReviewCount = state.reviewQueue.length;
+      state.stats = { again: 0, hard: 0, good: 0, easy: 0 };
+      state.flipped = false;
+    }
+
+    function getCurrentCard() {
+      return state.reviewQueue[0] || null;
+    }
+
+    function renderCard() {
+      const card = getCurrentCard();
+      if (!card) {
+        els.frontText.textContent = '本次練習已完成';
+        els.backText.textContent = '按下重新開始可再練一次。';
+        els.frontAudioBar.innerHTML = '';
+        els.backAudioBar.innerHTML = '';
+        els.flashcard.classList.remove('flipped');
+        els.indexStat.textContent = '0 / 0';
+        return;
+      }
+      const frontData = extractTTS(card.front);
+      const backData = extractTTS(card.back);
+      els.frontText.innerHTML = formatCardHtml(frontData.cleaned);
+      els.backText.innerHTML = formatCardHtml(backData.cleaned);
+      renderAudioBar(els.frontAudioBar, frontData.tags);
+      renderAudioBar(els.backAudioBar, backData.tags);
+      els.flashcard.classList.toggle('flipped', state.flipped);
+      const reviewed = state.initialReviewCount - state.reviewQueue.length + 1;
+      els.indexStat.textContent = reviewed + ' / ' + state.initialReviewCount;
+    }
+
+    function renderList() {
+      els.cardList.innerHTML = '';
+      state.reviewQueue.slice(0, 30).forEach((card, i) => {
+        const item = document.createElement('div');
+        item.className = 'item' + (i === 0 ? ' active' : '');
+        const frontData = extractTTS(card.front);
+        const backData = extractTTS(card.back);
+        item.innerHTML = '<div class="item-front">' + escapeHtml(frontData.cleaned) + '</div><div class="item-back">' + escapeHtml(backData.cleaned) + '</div>';
+        els.cardList.appendChild(item);
+      });
+    }
+
+    function renderStats() {
+      const remaining = state.reviewQueue.length;
+      const total = state.initialReviewCount || state.cards.length;
+      const done = total - remaining;
+      els.deckNameStat.textContent = state.deckName || '未命名';
+      els.countStat.textContent = state.cards.length;
+      els.resultStat.textContent = remaining;
+      els.flaggedStat.textContent = state.flagged.length;
+      els.progressText.textContent = '剩下卡片數量：' + remaining + ' / ' + total;
+      els.progressFill.style.width = total ? ((done / total) * 100).toFixed(1) + '%' : '0%';
+      els.againCount.textContent = state.stats.again;
+      els.hardCount.textContent = state.stats.hard;
+      els.goodCount.textContent = state.stats.good;
+      els.easyCount.textContent = state.stats.easy;
+      const disabled = remaining === 0;
+      els.prevBtn.disabled = disabled;
+      els.nextBtn.disabled = disabled;
+      els.flipBtn.disabled = disabled;
+      els.shuffleBtn.disabled = remaining < 2;
+      els.againBtn.disabled = disabled;
+      els.hardBtn.disabled = disabled;
+      els.goodBtn.disabled = disabled;
+      els.easyBtn.disabled = disabled;
+      els.flagBtn.disabled = disabled;
+      els.unflagBtn.disabled = disabled;
+      els.studyFlaggedBtn.disabled = state.flagged.length === 0;
+      els.reviewActions.hidden = disabled;
+      els.completionScreen.hidden = !disabled;
+      if (disabled) {
+        els.completionSummary.textContent = '本次共完成 ' + total + ' 張卡片。Again: ' + state.stats.again + '，Hard: ' + state.stats.hard + '，Good: ' + state.stats.good + '，Easy: ' + state.stats.easy + '。';
+      }
+    }
+
+    function renderAll() {
+      renderStats();
+      renderCard();
+      renderList();
+      }
+
+    function restartReviewSession() {
+      rebuildReviewQueueFromFiltered();
+      renderAll();
+      setStatus('已重新開始本次練習。');
+    }
+
+    function handleReview(action) {
+      const current = state.reviewQueue.shift();
+      if (!current) return;
+      state.flipped = false;
+      state.stats[action] += 1;
+      if (action === 'again') {
+        const pos = Math.min(1, state.reviewQueue.length);
+        state.reviewQueue.splice(pos, 0, current);
+      } else if (action === 'hard') {
+        const pos = Math.floor(state.reviewQueue.length / 2);
+        state.reviewQueue.splice(pos, 0, current);
+      } else if (action === 'good') {
+        state.reviewQueue.push(current);
+      }
+      renderAll();
+    }
+
+    function flagCurrentCard() {
+      const card = getCurrentCard();
+      if (!card) return;
+      if (state.flagged.some(item => sameCard(item, card))) {
+        setStatus('這張卡已經收藏在不熟字卡清單。');
+        return;
+      }
+      state.flagged.push({ front: card.front, back: card.back, level: card.level || '未分類' });
+      saveFlaggedToLocal();
+      renderStats();
+      setStatus('已收藏目前字卡，之後可再單獨複習。');
+    }
+
+    function unflagCurrentCard() {
+      const card = getCurrentCard();
+      if (!card) return;
+      const before = state.flagged.length;
+      state.flagged = state.flagged.filter(item => !sameCard(item, card));
+      if (state.flagged.length === before) {
+        setStatus('這張卡目前不在不熟字卡清單。');
+        return;
+      }
+      saveFlaggedToLocal();
+      renderStats();
+      setStatus('已將目前字卡從不熟字卡清單移除。');
+    }
+
+    function studyFlaggedCards() {
+      if (!state.flagged.length) {
+        setStatus('目前還沒有收藏任何不熟字卡。', false);
+        return;
+      }
+      state.filtered = [...state.flagged];
+      rebuildReviewQueueFromFiltered();
+      renderAll();
+      setStatus('已切換到不熟字卡複習模式。');
+    }
+
+    function applySearch() {
+      const keyword = els.searchInput.value.trim().toLowerCase();
+      let pool = [...state.cards];
+      if (!keyword) state.filtered = pool;
+      else state.filtered = pool.filter(card => `${card.front}
+${card.back}`.toLowerCase().includes(keyword));
+      rebuildReviewQueueFromFiltered();
+      renderAll();
+    }
+
+    function importCards(cards, deckName) {
+      state.deckName = deckName || '未命名';
+      state.cards = cards.map(card => ({ ...card, level: card.level || '未分類' }));
+      state.filtered = [...state.cards];
+      rebuildReviewQueueFromFiltered();
+      renderAll();
+      setStatus('已成功匯入 ' + cards.length + ' 張卡片。');
+    }
+
+    
+
+    
+
+    els.importBtn.addEventListener('click', function() {
+      try {
+        const cards = parseInput(els.inputArea.value, els.formatSelect.value);
+        if (!cards.length) {
+          setStatus('沒有解析到任何卡片，請檢查格式。', false);
+          return;
+        }
+        importCards(cards, els.deckName.value.trim() || '未命名');
+      } catch (err) {
+        console.error(err);
+        setStatus('匯入失敗：' + err.message, false);
+      }
+    });
+
+    els.saveBtn.addEventListener('click', function() {
+      saveCardsToLocal();
+      saveFlaggedToLocal();
+      setStatus('已儲存卡片與不熟字卡到瀏覽器。');
+    });
+    els.clearBtn.addEventListener('click', function() {
+      state.deckName = '未命名';
+      state.cards = [];
+      state.filtered = [];
+      state.reviewQueue = [];
+      state.flagged = [];
+      state.initialReviewCount = 0;
+      state.stats = { again: 0, hard: 0, good: 0, easy: 0 };
+      state.flipped = false;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FLAGGED_STORAGE_KEY);
+      els.inputArea.value = '';
+      els.searchInput.value = '';
+      renderAll();
+      setStatus('已清空目前頁面資料。');
+    });
+
+    els.searchInput.addEventListener('input', applySearch);
+    els.prevBtn.addEventListener('click', function() {
+      if (!state.reviewQueue.length) return;
+      const last = state.reviewQueue.pop();
+      state.reviewQueue.unshift(last);
+      state.flipped = false;
+      renderAll();
+    });
+    els.nextBtn.addEventListener('click', function() {
+      if (!state.reviewQueue.length) return;
+      const first = state.reviewQueue.shift();
+      state.reviewQueue.push(first);
+      state.flipped = false;
+      renderAll();
+    });
+    els.flipBtn.addEventListener('click', function() {
+      if (!state.reviewQueue.length) return;
+      state.flipped = !state.flipped;
+      renderCard();
+    });
+    els.shuffleBtn.addEventListener('click', function() {
+      for (let i = state.reviewQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.reviewQueue[i], state.reviewQueue[j]] = [state.reviewQueue[j], state.reviewQueue[i]];
+      }
+      state.flipped = false;
+      renderAll();
+      setStatus('卡片順序已洗牌。');
+    });
+    els.restartBtn.addEventListener('click', restartReviewSession);
+    els.restartSessionBtn.addEventListener('click', restartReviewSession);
+    els.studyFlaggedBtn.addEventListener('click', studyFlaggedCards);
+    els.againBtn.addEventListener('click', function() { handleReview('again'); });
+    els.hardBtn.addEventListener('click', function() { handleReview('hard'); });
+    els.goodBtn.addEventListener('click', function() { handleReview('good'); });
+    els.easyBtn.addEventListener('click', function() { handleReview('easy'); });
+    els.flagBtn.addEventListener('click', flagCurrentCard);
+    els.unflagBtn.addEventListener('click', unflagCurrentCard);
+
+    els.flashcard.addEventListener('click', function() {
+      if (!state.reviewQueue.length) return;
+      state.flipped = !state.flipped;
+      renderCard();
+    });
+
+    els.fileInput.addEventListener('change', async function(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (ext === 'json') els.formatSelect.value = 'json';
+        else if (ext === 'csv') els.formatSelect.value = 'csv';
+        else els.formatSelect.value = 'tsv';
+        els.inputArea.value = text;
+        if (!els.deckName.value.trim()) {
+          els.deckName.value = file.name.replace(/\.[^.]+$/, '');
+        }
+        setStatus('已讀取檔案：' + file.name + '，按「匯入卡片」即可。');
+      } catch (err) {
+        console.error(err);
+        setStatus('讀取檔案失敗。', false);
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      const tag = e.target.tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+      if (e.key === 'ArrowLeft') els.prevBtn.click();
+      if (e.key === 'ArrowRight') els.nextBtn.click();
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        els.flipBtn.click();
+      }
+      if (e.key === '1') els.againBtn.click();
+      if (e.key === '2') els.hardBtn.click();
+      if (e.key === '3') els.goodBtn.click();
+      if (e.key === '4') els.easyBtn.click();
+      if (e.key === '5') els.flagBtn.click();
+    });
+
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = function() { loadVoices(); };
+      window.addEventListener('click', unlockSpeech, { once: true });
+    }
+
+    renderAll();
+    loadFlaggedFromLocal();
+    loadCardsFromLocal();
+  </script>
+</body>
+</html>

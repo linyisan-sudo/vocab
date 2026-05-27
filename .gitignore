@@ -1,0 +1,11 @@
+.gradle/
+build/
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/gradle-8.7/
+android-app/cmdline-tools-temp/
+android-app/gradle-8.7-bin.zip
+android-app/commandlinetools-win-14742923_latest.zip
+android-app/local.properties
+*.log
